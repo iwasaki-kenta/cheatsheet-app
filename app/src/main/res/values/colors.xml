@@ -10,4 +10,14 @@
     <color name="colorHead">#363147</color>
     <color name="colorPara">#8b8a8d</color>
     <color name="colorShake">#78909c</color>
+
+    <string-array name="colors">
+        <item>#21b6cf</item>
+        <item>#fd5544</item>
+        <item>#ffe638</item>
+        <item>#69da23</item>
+        <item>#000000</item>
+        <item>#a967f1</item>
+        <item>#8f581f</item>
+    </string-array>
 </resources>

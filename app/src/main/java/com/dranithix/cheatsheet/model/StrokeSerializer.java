@@ -1,5 +1,6 @@
 package com.dranithix.cheatsheet.model;
 
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.LinkedList;
@@ -12,7 +13,7 @@ import com.wacom.ink.utils.Utils;
 
 public class StrokeSerializer {
 	private final static int DEFAULT_DECIMAL_PRECISION = 2;
-	
+
 	private int decimalPrecision;
 	public StrokeSerializer(int decimalPrecision) {
 		this.decimalPrecision = decimalPrecision;
@@ -34,7 +35,7 @@ public class StrokeSerializer {
 
 		ByteBuffer encData = encoder.getEncodedData();
 		encSize = encoder.getEncodedDataSizeInBytes();
-	
+
 		bytes = new byte[encSize];
 		if (encSize > 0) {
 			encData.position(0);
@@ -46,27 +47,29 @@ public class StrokeSerializer {
 		return Utils.saveBinaryFile(uri, buffer, 0, encSize);
 	}
 
-	public LinkedList<Stroke> deserialize(Uri uri) {
-		ByteBuffer buffer = Utils.loadBinaryFile(uri);
+	public LinkedList<Stroke> deserialize(InputStream inputStream) {
+		ByteBuffer buffer = Utils.readInputStream(inputStream);
 		if (buffer==null){
 			return new LinkedList<Stroke>();
 		}
-		
+
 		buffer = buffer.order(ByteOrder.LITTLE_ENDIAN);
-		
+
 		InkDecoder decoder = new InkDecoder(buffer);
 		LinkedList<Stroke> result = new LinkedList<Stroke>();
-		
+
 		while (decoder.decodeNextPath()){
 			Stroke stroke = new Stroke(decoder.getDecodedPathSize());
-			
+
 			stroke.setColor(decoder.getDecodedPathIntColor());
 			stroke.setStride(decoder.getDecodedPathStride());
 			stroke.setInterval(decoder.getDecodedPathTs(), decoder.getDecodedPathTf());
 			stroke.setWidth(decoder.getDecodedPathWidth());
 			stroke.setBlendMode(decoder.getDecodedBlendMode());
 			Utils.copyFloatBuffer(decoder.getDecodedPathData(), stroke.getPoints(), 0, 0, decoder.getDecodedPathSize());
-			
+
+			stroke.calculateBounds();
+
 			result.add(stroke);
 		}
 		return result;

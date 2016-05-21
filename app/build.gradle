@@ -55,4 +55,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     provided 'frankiesardo:icepick-processor:3.2.0'
     compile project(':will-sdk-1.8.1')
+    compile 'com.thebluealliance:spectrum:0.4.2'
 }

@@ -1,17 +1,21 @@
 package com.dranithix.cheatsheet;
 
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.app.AlertDialog;
+import android.support.annotation.ColorInt;
 import android.support.v7.app.AppCompatActivity;
-import android.view.MotionEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.View;
+import android.view.*;
 
+import android.widget.ImageView;
+import butterknife.OnLongClick;
 import com.dranithix.cheatsheet.model.Stroke;
 import com.dranithix.cheatsheet.model.StrokeSerializer;
+import com.thebluealliance.spectrum.SpectrumDialog;
+import com.wacom.ink.manipulation.Intersector;
 import com.wacom.ink.path.PathBuilder;
 import com.wacom.ink.path.PathUtils;
 import com.wacom.ink.path.SpeedPathBuilder;
@@ -26,6 +30,8 @@ import com.wacom.ink.rendering.EGLRenderingContext;
 import com.wacom.ink.smooth.MultiChannelSmoothener;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -48,17 +54,41 @@ public class DrawActivity extends AppCompatActivity {
     private StrokeRenderer strokeRenderer;
     private Layer strokesLayer;
     private Layer currentFrameLayer;
-    private HashMap<Long, Integer> penIdsMap;
-
     private StrokeSerializer serializer;
-    private LinkedList<Stroke> strokesList = new LinkedList<Stroke>();
+    private Intersector<Stroke> intersector;
+
+    private LinkedList<Stroke> strokesList = new LinkedList<>();
+    private LinkedList<ClipboardEvent> undoStrokesList = new LinkedList<>();
+    private boolean drawing = true;
+
 
     @Bind(R.id.noteView)
     SurfaceView notesView;
 
-    @OnClick(R.id.save)
-    public void saveNote() {
-        saveStrokes();
+    @OnClick(R.id.undo)
+    public void undo() {
+        undoDraw();
+    }
+
+    @OnClick(R.id.redo)
+    public void redo() {
+        redoDraw();
+    }
+
+    @OnClick(R.id.eraser)
+    public void erase() {
+        toggleEraser();
+    }
+
+    @OnLongClick(R.id.eraser)
+    public boolean eraseAll() {
+        confirmEraseAll();
+        return true;
+    }
+
+    @OnClick(R.id.palette)
+    public void palette() {
+        showPalette();
     }
 
     @Override
@@ -67,8 +97,6 @@ public class DrawActivity extends AppCompatActivity {
         setContentView(R.layout.activity_draw);
 
         ButterKnife.bind(this);
-
-        penIdsMap = new HashMap<Long, Integer>();
 
         pathBuilder = new SpeedPathBuilder();
         pathBuilder.setNormalizationConfig(100.0f, 4000.0f);
@@ -97,7 +125,7 @@ public class DrawActivity extends AppCompatActivity {
 
                 paint = new StrokePaint();
                 paint.setStrokeBrush(brush);    // Solid color brush.
-                paint.setColor(Color.BLUE);        // Blue color.
+                paint.setColor(Color.parseColor(getResources().getStringArray(R.array.colors)[0]));
                 paint.setWidth(Float.NaN);        // Expected variable width.
 
                 smoothener = new MultiChannelSmoothener(pathStride);
@@ -106,6 +134,7 @@ public class DrawActivity extends AppCompatActivity {
                 strokeRenderer = new StrokeRenderer(inkCanvas, paint, pathStride, width, height);
 
                 serializer = new StrokeSerializer();
+                intersector = new Intersector<Stroke>();
 
                 loadStrokes();
                 drawStrokes();
@@ -126,21 +155,42 @@ public class DrawActivity extends AppCompatActivity {
         notesView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                boolean bFinished = buildPath(event);
-                drawStroke(event);
-                renderView();
+                if (strokesList.size() > 0 && !drawing) {
+                    buildPath(event);
+                    intersector.setTargetAsStroke(pathBuilder.getPathBuffer(), pathBuilder.getPathLastUpdatePosition(), pathBuilder.getAddedPointsSize(), pathStride);
+                    LinkedList<Stroke> removedStrokes = new LinkedList<Stroke>();
+                    for (Stroke stroke : strokesList) {
+                        if (intersector.isIntersectingTarget(stroke)) {
+                            removedStrokes.add(stroke);
+                        }
+                    }
+                    for (Stroke stroke : removedStrokes) {
+                        undoStrokesList.addLast(new ClipboardEvent(stroke, true));
+                    }
+                    strokesList.removeAll(removedStrokes);
+                    drawStrokes();
+                    renderView();
+                } else if (drawing) {
+                    boolean bFinished = buildPath(event);
+                    drawStroke(event);
+                    renderView();
+                    if (bFinished) {
+                        Stroke stroke = new Stroke();
+                        stroke.copyPoints(pathBuilder.getPathBuffer(), 0, pathBuilder.getPathSize());
+                        stroke.setStride(pathBuilder.getStride());
+                        stroke.setWidth(Float.NaN);
+                        stroke.setColor(paint.getColor());
+                        stroke.setInterval(0.0f, 1.0f);
+                        stroke.setBlendMode(BlendMode.BLENDMODE_NORMAL);
+                        stroke.calculateBounds();
+                        strokesList.add(stroke);
+                        undoStrokesList.clear();
 
-                if (bFinished){
-                    Stroke stroke = new Stroke();
-                    stroke.copyPoints(pathBuilder.getPathBuffer(), 0, pathBuilder.getPathSize());
-                    stroke.setStride(pathBuilder.getStride());
-                    stroke.setWidth(Float.NaN);
-                    stroke.setColor(paint.getColor());
-                    stroke.setInterval(0.0f, 1.0f);
-                    stroke.setBlendMode(BlendMode.BLENDMODE_NORMAL);
-
-                    strokesList.add(stroke);
+                    }
                 }
+                saveStrokes();
+
+
                 return true;
             }
         });
@@ -150,7 +200,7 @@ public class DrawActivity extends AppCompatActivity {
         inkCanvas.setTarget(strokesLayer);
         inkCanvas.clearColor();
 
-        for (Stroke stroke: strokesList){
+        for (Stroke stroke : strokesList) {
             paint.setColor(stroke.getColor());
             strokeRenderer.setStrokePaint(paint);
             strokeRenderer.drawPoints(stroke.getPoints(), 0, stroke.getSize(), stroke.getStartValue(), stroke.getEndValue(), true);
@@ -169,14 +219,14 @@ public class DrawActivity extends AppCompatActivity {
         inkCanvas.invalidate();
     }
 
-    private boolean buildPath(MotionEvent event){
-        if (event.getAction()!=MotionEvent.ACTION_DOWN
-                && event.getAction()!=MotionEvent.ACTION_MOVE
-                && event.getAction()!=MotionEvent.ACTION_UP){
+    private boolean buildPath(MotionEvent event) {
+        if (event.getAction() != MotionEvent.ACTION_DOWN
+                && event.getAction() != MotionEvent.ACTION_MOVE
+                && event.getAction() != MotionEvent.ACTION_UP) {
             return false;
         }
 
-        if (event.getAction()==MotionEvent.ACTION_DOWN){
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
             // Reset the smoothener instance when starting to generate a new path.
             smoothener.reset();
         }
@@ -187,9 +237,9 @@ public class DrawActivity extends AppCompatActivity {
         MultiChannelSmoothener.SmoothingResult smoothingResult;
         int partSize = pathBuilder.getPathPartSize();
 
-        if (partSize>0){
+        if (partSize > 0) {
             // Smooth the returned control points (aka path part).
-            smoothingResult = smoothener.smooth(part, partSize, (phase==Phase.END));
+            smoothingResult = smoothener.smooth(part, partSize, (phase == Phase.END));
             // Add the smoothed control points to the path builder.
             pathBuilder.addPathPart(smoothingResult.getSmoothedPoints(), smoothingResult.getSize());
         }
@@ -201,29 +251,23 @@ public class DrawActivity extends AppCompatActivity {
         // Add the smoothed preliminary path to the path builder.
         pathBuilder.finishPreliminaryPath(smoothingResult.getSmoothedPoints(), smoothingResult.getSize());
 
-        return (event.getAction()==MotionEvent.ACTION_UP && pathBuilder.hasFinished());
+        return (event.getAction() == MotionEvent.ACTION_UP && pathBuilder.hasFinished());
     }
 
 
-    protected void loadStrokes(){
-        strokesList = serializer.deserialize(Uri.fromFile(new File(Environment.getExternalStorageDirectory() + "/will.bin")));
+    protected void loadStrokes() {
+        try {
+            strokesList = serializer.deserialize(new FileInputStream(new File(Environment.getExternalStorageDirectory() + "/will.bin")));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
-    protected void saveStrokes(){
+    protected void saveStrokes() {
         serializer.serialize(Uri.fromFile(new File(Environment.getExternalStorageDirectory() + "/will.bin")), strokesList);
     }
 
     private void drawStroke(MotionEvent event) {
-
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            //the first touch of the new stroke
-            long penId = PenRecognizer.getPenId(event);
-            if (!penIdsMap.containsKey(penId)) {
-                int color = Color.argb(155 + (int) (Math.random() * 100), (int) (Math.random() * 150), (int) (Math.random() * 150), (int) (Math.random() * 150));
-                penIdsMap.put(penId, color);
-            }
-            strokeRenderer.getStrokePaint().setColor(penIdsMap.get(penId));
-        }
 
         strokeRenderer.drawPoints(pathBuilder.getPathBuffer(), pathBuilder.getPathLastUpdatePosition(), pathBuilder.getAddedPointsSize(), event.getAction() == MotionEvent.ACTION_UP);
         strokeRenderer.drawPrelimPoints(pathBuilder.getPreliminaryPathBuffer(), 0, pathBuilder.getFinishedPreliminaryPathSize());
@@ -241,8 +285,128 @@ public class DrawActivity extends AppCompatActivity {
         }
     }
 
+    private void undoDraw() {
+        if (strokesList.size() != 0) {
+            if (undoStrokesList.size() != 0 && undoStrokesList.getLast().isDelete()) {
+                strokesList.add(undoStrokesList.removeLast().getStroke());
+            } else {
+                undoStrokesList.addLast(new ClipboardEvent(strokesList.removeLast(), false));
+            }
+            drawStrokes();
+            renderView();
+        }
+    }
+
+    @OnClick(R.id.palette)
+    public void chooseColor() {
+        String[] hexColors = getResources().getStringArray(R.array.colors);
+        int[] colors = new int[hexColors.length];
+        for (int i = 0; i < hexColors.length; i++) {
+            colors[i] = Color.parseColor(hexColors[i]);
+        }
+        new SpectrumDialog.Builder(this).setSelectedColor(paint.getColor()).setOnColorSelectedListener(new SpectrumDialog.OnColorSelectedListener() {
+            @Override
+            public void onColorSelected(boolean positiveResult, @ColorInt int color) {
+                if (positiveResult) {
+                    paint.setColor(color);
+                    strokeRenderer.setStrokePaint(paint);
+
+                }
+            }
+        })
+                .setColors(colors).build().show(getSupportFragmentManager(), "Choose Color");
+
+
+    }
+
+    private void redoDraw() {
+        if (undoStrokesList.size() != 0) {
+            strokesList.addLast(undoStrokesList.removeLast().getStroke());
+            drawStrokes();
+            renderView();
+        }
+    }
+
+    private void toggleEraser() {
+        if (drawing) {
+            ImageView pencil = (ImageView) findViewById(R.id.eraser);
+            pencil.setImageResource(R.drawable.pencil);
+        } else {
+            ImageView eraser = (ImageView) findViewById(R.id.eraser);
+            eraser.setImageResource(R.drawable.eraser);
+        }
+        drawing = !drawing;
+    }
+
+    private void confirmEraseAll() {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+        alertDialogBuilder.setMessage("Are you sure you want to clear the screen?\n\nThis action cannot be undone.");
+        alertDialogBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                strokesList.clear();
+                undoStrokesList.clear();
+                drawStrokes();
+                renderView();
+            }
+        });
+        alertDialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        });
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
+    private void showPalette() {
+
+    }
+
+    private static int lighten(int color, double fraction) {
+        int red = Color.red(color);
+        int green = Color.green(color);
+        int blue = Color.blue(color);
+        red = lightenColor(red, fraction);
+        green = lightenColor(green, fraction);
+        blue = lightenColor(blue, fraction);
+        int alpha = Color.alpha(color);
+        return Color.argb(alpha, red, green, blue);
+    }
+
+    private static int lightenColor(int color, double fraction) {
+        return (int) Math.min(color + (color * fraction), 255);
+    }
+
     private void releaseResources() {
         strokeRenderer.dispose();
         inkCanvas.dispose();
+    }
+
+    class ClipboardEvent {
+        Stroke stroke;
+        boolean delete = false;
+
+        public ClipboardEvent(Stroke stroke, boolean delete) {
+            this.stroke = stroke;
+            this.delete = delete;
+        }
+
+        public boolean isDelete() {
+            return delete;
+        }
+
+        public void setDelete(boolean delete) {
+            this.delete = delete;
+        }
+
+        public Stroke getStroke() {
+            return stroke;
+        }
+
+        public void setStroke(Stroke stroke) {
+            this.stroke = stroke;
+        }
     }
 }

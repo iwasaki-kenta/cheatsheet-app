@@ -1,36 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="true">
+                                                 android:layout_width="match_parent"
+                                                 android:layout_height="match_parent"
+                                                 android:fitsSystemWindows="true">
 
-    <include layout="@layout/draw_bar" />
+    <include layout="@layout/draw_bar"/>
 
     <RelativeLayout
-        android:id="@+id/fragment_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="56dp"
-        android:orientation="vertical">
+            android:id="@+id/fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="56dp"
+            android:orientation="vertical">
 
         <SurfaceView
-            android:id="@+id/noteView"
-            android:layout_above="@+id/buttons"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+                android:id="@+id/noteView"
+                android:layout_above="@+id/buttons"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" android:layout_alignParentStart="true"/>
 
         <LinearLayout
-            android:id="@+id/buttons"
-            android:layout_alignParentBottom="true"
-            android:layout_width="match_parent"
-            android:padding="16dp"
-            android:layout_height="wrap_content">
+                android:id="@+id/buttons"
+                android:layout_alignParentBottom="true"
+                android:layout_width="match_parent"
+                android:padding="16dp"
+                android:layout_height="wrap_content">
 
             <ImageView
-                android:id="@+id/save"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/content_save"/>
+                    android:id="@+id/undo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/undo"
+                    android:adjustViewBounds="false"
+                    android:layout_weight="1"/>
+
+            <ImageView
+                    android:id="@+id/redo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/redo"
+                    android:adjustViewBounds="false"
+                    android:layout_weight="1"/>
+
+            <ImageView
+                    android:id="@+id/eraser"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/eraser"
+                    android:adjustViewBounds="false"
+                    android:layout_weight="1"/>
+
+            <ImageView
+                    android:id="@+id/palette"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/palette"
+                    android:adjustViewBounds="false"
+                    android:layout_weight="1"/>
         </LinearLayout>
 
     </RelativeLayout>
