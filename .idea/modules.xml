@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Cheatsheet.iml" filepath="$PROJECT_DIR$/Cheatsheet.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/will-sdk-1.8.1/will-sdk-1.8.1.iml" filepath="$PROJECT_DIR$/will-sdk-1.8.1/will-sdk-1.8.1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/cheatsheet_android.iml" filepath="$PROJECT_DIR$/.idea/modules/cheatsheet_android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/will-sdk-1.8.1/will-sdk-1.8.1.iml" filepath="$PROJECT_DIR$/.idea/modules/will-sdk-1.8.1/will-sdk-1.8.1.iml" />
     </modules>
   </component>
 </project>
