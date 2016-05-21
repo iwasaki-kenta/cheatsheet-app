@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="colortext">#444a59</color>
+    <color name="colorbg">#ffffff</color>
+    <color name="btcolorbg">#C5C7CC</color>
+    <color name="background_line">#444a59</color>
+    <color name="colorHead">#363147</color>
+    <color name="colorPara">#8b8a8d</color>
+    <color name="colorShake">#78909c</color>
+</resources>
