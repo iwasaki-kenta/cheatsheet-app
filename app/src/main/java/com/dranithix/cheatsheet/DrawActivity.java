@@ -1,17 +1,18 @@
 package com.dranithix.cheatsheet;
 
+import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.app.AlertDialog;
 import android.support.annotation.ColorInt;
 import android.support.v7.app.AppCompatActivity;
-import android.view.*;
-
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
 import android.widget.ImageView;
-import butterknife.OnLongClick;
+
+import com.dranithix.cheatsheet.entities.Note;
 import com.dranithix.cheatsheet.model.Stroke;
 import com.dranithix.cheatsheet.model.StrokeSerializer;
 import com.thebluealliance.spectrum.SpectrumDialog;
@@ -19,7 +20,6 @@ import com.wacom.ink.manipulation.Intersector;
 import com.wacom.ink.path.PathBuilder;
 import com.wacom.ink.path.PathUtils;
 import com.wacom.ink.path.SpeedPathBuilder;
-import com.wacom.ink.penid.PenRecognizer;
 import com.wacom.ink.rasterization.BlendMode;
 import com.wacom.ink.rasterization.InkCanvas;
 import com.wacom.ink.rasterization.Layer;
@@ -29,18 +29,15 @@ import com.wacom.ink.rasterization.StrokeRenderer;
 import com.wacom.ink.rendering.EGLRenderingContext;
 import com.wacom.ink.smooth.MultiChannelSmoothener;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.nio.FloatBuffer;
-import java.util.HashMap;
 import java.util.LinkedList;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import butterknife.OnLongClick;
 
-import static com.wacom.ink.path.PathUtils.*;
+import static com.wacom.ink.path.PathUtils.Phase;
 
 public class DrawActivity extends AppCompatActivity {
 
@@ -61,6 +58,10 @@ public class DrawActivity extends AppCompatActivity {
     private LinkedList<ClipboardEvent> undoStrokesList = new LinkedList<>();
     private boolean drawing = true;
 
+    @OnClick(R.id.back_button)
+    public void backButton() {
+        finish();
+    }
 
     @Bind(R.id.noteView)
     SurfaceView notesView;
@@ -104,96 +105,103 @@ public class DrawActivity extends AppCompatActivity {
         pathBuilder.setPropertyConfig(PathBuilder.PropertyName.Width, 5f, 10f, Float.NaN, Float.NaN, PathBuilder.PropertyFunction.Power, 1.0f, false);
         pathStride = pathBuilder.getStride();
 
+        Bundle b = getIntent().getExtras();
+        if (b != null) {
+            final Note note = (Note) b.getParcelable("note");
+            notesView.getHolder().addCallback(new SurfaceHolder.Callback() {
 
-        notesView.getHolder().addCallback(new SurfaceHolder.Callback() {
-
-            @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-                if (inkCanvas != null && !inkCanvas.isDisposed()) {
-                    releaseResources();
-                }
-
-                inkCanvas = InkCanvas.create(holder, new EGLRenderingContext.EGLConfiguration());
-
-                viewLayer = inkCanvas.createViewLayer(width, height);
-                strokesLayer = inkCanvas.createLayer(width, height);
-                currentFrameLayer = inkCanvas.createLayer(width, height);
-
-                inkCanvas.clearLayer(currentFrameLayer, Color.WHITE);
-
-                brush = new SolidColorBrush();
-
-                paint = new StrokePaint();
-                paint.setStrokeBrush(brush);    // Solid color brush.
-                paint.setColor(Color.parseColor(getResources().getStringArray(R.array.colors)[0]));
-                paint.setWidth(Float.NaN);        // Expected variable width.
-
-                smoothener = new MultiChannelSmoothener(pathStride);
-                smoothener.enableChannel(2);
-
-                strokeRenderer = new StrokeRenderer(inkCanvas, paint, pathStride, width, height);
-
-                serializer = new StrokeSerializer();
-                intersector = new Intersector<Stroke>();
-
-                loadStrokes();
-                drawStrokes();
-                renderView();
-            }
-
-            @Override
-            public void surfaceCreated(SurfaceHolder holder) {
-
-            }
-
-            @Override
-            public void surfaceDestroyed(SurfaceHolder holder) {
-                releaseResources();
-            }
-        });
-
-        notesView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (strokesList.size() > 0 && !drawing) {
-                    buildPath(event);
-                    intersector.setTargetAsStroke(pathBuilder.getPathBuffer(), pathBuilder.getPathLastUpdatePosition(), pathBuilder.getAddedPointsSize(), pathStride);
-                    LinkedList<Stroke> removedStrokes = new LinkedList<Stroke>();
-                    for (Stroke stroke : strokesList) {
-                        if (intersector.isIntersectingTarget(stroke)) {
-                            removedStrokes.add(stroke);
-                        }
+                @Override
+                public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+                    if (inkCanvas != null && !inkCanvas.isDisposed()) {
+                        releaseResources();
                     }
-                    for (Stroke stroke : removedStrokes) {
-                        undoStrokesList.addLast(new ClipboardEvent(stroke, true));
-                    }
-                    strokesList.removeAll(removedStrokes);
+
+                    inkCanvas = InkCanvas.create(holder, new EGLRenderingContext.EGLConfiguration());
+
+                    viewLayer = inkCanvas.createViewLayer(width, height);
+                    strokesLayer = inkCanvas.createLayer(width, height);
+                    currentFrameLayer = inkCanvas.createLayer(width, height);
+
+                    inkCanvas.clearLayer(currentFrameLayer, Color.WHITE);
+
+                    brush = new SolidColorBrush();
+
+                    paint = new StrokePaint();
+                    paint.setStrokeBrush(brush);    // Solid color brush.
+                    paint.setColor(Color.parseColor(getResources().getStringArray(R.array.colors)[0]));
+                    paint.setWidth(Float.NaN);        // Expected variable width.
+
+                    smoothener = new MultiChannelSmoothener(pathStride);
+                    smoothener.enableChannel(2);
+
+                    strokeRenderer = new StrokeRenderer(inkCanvas, paint, pathStride, width, height);
+
+                    serializer = new StrokeSerializer();
+                    intersector = new Intersector<Stroke>();
+
+                    loadStrokes(note.getData());
                     drawStrokes();
                     renderView();
-                } else if (drawing) {
-                    boolean bFinished = buildPath(event);
-                    drawStroke(event);
-                    renderView();
-                    if (bFinished) {
-                        Stroke stroke = new Stroke();
-                        stroke.copyPoints(pathBuilder.getPathBuffer(), 0, pathBuilder.getPathSize());
-                        stroke.setStride(pathBuilder.getStride());
-                        stroke.setWidth(Float.NaN);
-                        stroke.setColor(paint.getColor());
-                        stroke.setInterval(0.0f, 1.0f);
-                        stroke.setBlendMode(BlendMode.BLENDMODE_NORMAL);
-                        stroke.calculateBounds();
-                        strokesList.add(stroke);
-                        undoStrokesList.clear();
-
-                    }
                 }
-                saveStrokes();
+
+                @Override
+                public void surfaceCreated(SurfaceHolder holder) {
+
+                }
+
+                @Override
+                public void surfaceDestroyed(SurfaceHolder holder) {
+                    releaseResources();
+                }
+            });
+
+            notesView.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    if (strokesList.size() > 0 && !drawing) {
+                        buildPath(event);
+                        intersector.setTargetAsStroke(pathBuilder.getPathBuffer(), pathBuilder.getPathLastUpdatePosition(), pathBuilder.getAddedPointsSize(), pathStride);
+                        LinkedList<Stroke> removedStrokes = new LinkedList<Stroke>();
+                        for (Stroke stroke : strokesList) {
+                            if (intersector.isIntersectingTarget(stroke)) {
+                                removedStrokes.add(stroke);
+                            }
+                        }
+                        for (Stroke stroke : removedStrokes) {
+                            undoStrokesList.addLast(new ClipboardEvent(stroke, true));
+                        }
+                        strokesList.removeAll(removedStrokes);
+                        drawStrokes();
+                        renderView();
+                    } else if (drawing) {
+                        boolean bFinished = buildPath(event);
+                        drawStroke(event);
+                        renderView();
+                        if (bFinished) {
+                            Stroke stroke = new Stroke();
+                            stroke.copyPoints(pathBuilder.getPathBuffer(), 0, pathBuilder.getPathSize());
+                            stroke.setStride(pathBuilder.getStride());
+                            stroke.setWidth(Float.NaN);
+                            stroke.setColor(paint.getColor());
+                            stroke.setInterval(0.0f, 1.0f);
+                            stroke.setBlendMode(BlendMode.BLENDMODE_NORMAL);
+                            stroke.calculateBounds();
+                            strokesList.add(stroke);
+                            undoStrokesList.clear();
+
+                        }
+                    }
+                    saveStrokes();
 
 
-                return true;
-            }
-        });
+                    return true;
+                }
+            });
+        } else {
+            finish();
+        }
+
+
     }
 
     private void drawStrokes() {
@@ -255,16 +263,12 @@ public class DrawActivity extends AppCompatActivity {
     }
 
 
-    protected void loadStrokes() {
-        try {
-            strokesList = serializer.deserialize(new FileInputStream(new File(Environment.getExternalStorageDirectory() + "/will.bin")));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+    protected void loadStrokes(String details) {
+        strokesList = serializer.deserialize(details);
     }
 
     protected void saveStrokes() {
-        serializer.serialize(Uri.fromFile(new File(Environment.getExternalStorageDirectory() + "/will.bin")), strokesList);
+        serializer.serialize(strokesList);
     }
 
     private void drawStroke(MotionEvent event) {

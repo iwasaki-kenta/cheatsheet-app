@@ -1,6 +1,5 @@
 package com.dranithix.cheatsheet.events;
 
-import com.dranithix.cheatsheet.entities.Category;
 import com.dranithix.cheatsheet.entities.Subcategory;
 
 /**
@@ -8,9 +7,9 @@ import com.dranithix.cheatsheet.entities.Subcategory;
  */
 
 public class OnSubcategoryClickEvent {
-    public final Subcategory category;
+    public final Subcategory subcategory;
 
-    public OnSubcategoryClickEvent(Subcategory category) {
-        this.category = category;
+    public OnSubcategoryClickEvent(Subcategory subcategory) {
+        this.subcategory = subcategory;
     }
 }

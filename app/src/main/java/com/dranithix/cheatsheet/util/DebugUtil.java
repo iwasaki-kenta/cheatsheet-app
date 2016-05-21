@@ -7,19 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DebugUtil {
-    public static List<Category> testCategoryData() {
-        List<Category> testData = new ArrayList<Category>();
-        testData.add(new Category("abc", "English", "http://www.thehindu.com/multimedia/dynamic/00136/nets_136621f.jpg"));
-        testData.add(new Category("def", "Math", "https://www.topsknives.com/media/catalog/product/cache/1/image/464x/040ec09b1e35df139433887a97daa66f/h/o/hofhar01_1_.jpg"));
-        return testData;
-    }
-
-    public static List<Subcategory> testSubcategoryData() {
-        List<Subcategory> testData = new ArrayList<Subcategory>();
-        testData.add(new Subcategory("", "Calculus 1"));
-        testData.add(new Subcategory("", "Calculus 2"));
-        return testData;
-    }
 
     public static String getFormattedLocationInDegree(double latitude, double longitude) {
         try {

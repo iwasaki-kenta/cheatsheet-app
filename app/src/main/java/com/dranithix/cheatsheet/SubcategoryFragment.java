@@ -10,7 +10,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
+import com.dranithix.cheatsheet.entities.Category;
 import com.dranithix.cheatsheet.entities.Subcategory;
 import com.dranithix.cheatsheet.ui.SubcategoryListAdapter;
 import com.dranithix.cheatsheet.util.DebugUtil;
@@ -24,21 +26,24 @@ import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import customfonts.MyTextView;
 
 public class SubcategoryFragment extends Fragment {
-    private String categoryId = null;
+    private Category category = null;
 
     @Bind(R.id.list)
     RecyclerView list;
+
+    MyTextView toolbarTitle;
 
     private List<Subcategory> subcategories = new ArrayList<Subcategory>();
 
     private SubcategoryListAdapter adapter;
 
-    public static SubcategoryFragment newInstance(String categoryId) {
+    public static SubcategoryFragment newInstance(Category category) {
         SubcategoryFragment fragment = new SubcategoryFragment();
         Bundle params = new Bundle();
-        params.putString("id", categoryId);
+        params.putParcelable("subcategory", category);
         fragment.setArguments(params);
         return fragment;
     }
@@ -48,7 +53,7 @@ public class SubcategoryFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null) {
-            categoryId = getArguments().getString("id");
+            category = getArguments().getParcelable("subcategory");
         }
     }
 
@@ -56,19 +61,22 @@ public class SubcategoryFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_subcategory, container, false);
+        toolbarTitle = (MyTextView) getActivity().findViewById(R.id.toolbar_title);
         ButterKnife.bind(this, view);
 
         list.setLayoutManager(new LinearLayoutManager(getContext()));
         list.setAdapter(adapter = new SubcategoryListAdapter(subcategories));
 
-        if (subcategories.size() == 0 && categoryId != null) {
+        if (subcategories.size() == 0 && category != null) {
+            toolbarTitle.setText(category.getName());
+
             final ProgressDialog dialog = new ProgressDialog(getContext());
             dialog.setTitle("Loading...");
             dialog.setMessage("Collecting topics...");
             dialog.show();
 
             ParseQuery<ParseObject> query = ParseQuery.getQuery("Category");
-            query.whereEqualTo("parentId", categoryId);
+            query.whereEqualTo("parentId", category.getId());
             query.orderByAscending("name");
             query.findInBackground(new FindCallback<ParseObject>() {
                 public void done(List<ParseObject> cat, ParseException e) {

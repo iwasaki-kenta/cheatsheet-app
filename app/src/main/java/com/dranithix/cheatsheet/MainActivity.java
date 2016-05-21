@@ -2,20 +2,16 @@ package com.dranithix.cheatsheet;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.NavigationView;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
+import android.widget.TextView;
 
 import com.dranithix.cheatsheet.events.OnCategoryClickEvent;
 import com.dranithix.cheatsheet.events.OnSubcategoryClickEvent;
-import com.dranithix.cheatsheet.ui.CategoryListAdapter;
-import com.dranithix.cheatsheet.util.DebugUtil;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -37,8 +33,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-        EventBus.getDefault().register(this);
-
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
@@ -46,6 +40,18 @@ public class MainActivity extends AppCompatActivity {
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.replace(R.id.fragment_container, new CategoryFragment());
         transaction.commit();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
     }
 
     @OnClick(R.id.open_nav_drawer)
@@ -60,14 +66,15 @@ public class MainActivity extends AppCompatActivity {
         transaction.setCustomAnimations(android.R.anim.fade_in,
                 android.R.anim.fade_out, android.R.anim.fade_in,
                 android.R.anim.fade_out);
-        transaction.replace(R.id.fragment_container, SubcategoryFragment.newInstance(event.category.getId()));
+        transaction.replace(R.id.fragment_container, SubcategoryFragment.newInstance(event.category));
         transaction.addToBackStack(null);
         transaction.commit();
     }
 
     @Subscribe
     public void onSubcategoryClicked(OnSubcategoryClickEvent event) {
-        Intent intent = new Intent(this, DrawActivity.class);
+        Intent intent = new Intent(this, NoteListActivity.class);
+        intent.putExtra("subcategory", event.subcategory);
         startActivity(intent);
     }
 }
