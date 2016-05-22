@@ -74,6 +74,8 @@ public class CategoryFragment extends Fragment {
                     "http://www.bu.edu/math/files/2010/06/golden-ratio.jpg",
                     "http://www.cmu.edu/physics/news/2016/images/gravwaves_large.jpg"};
 
+            final int[] counts = new int[] {24, 31, 52, 12, 43, 13};
+
             query.findInBackground(new FindCallback<ParseObject>() {
                 public void done(List<ParseObject> cat, ParseException e) {
                     if (e == null) {
@@ -83,7 +85,7 @@ public class CategoryFragment extends Fragment {
                             category.setId(obj.getObjectId());
                             category.setName(obj.getString("name"));
                             category.setImagePath(imageUrls[iterate++]);
-                            category.setCount(obj.getInt("count"));
+                            category.setCount(counts[iterate - 1]);
                             System.out.println(category.getName());
                             categories.add(category);
                         }

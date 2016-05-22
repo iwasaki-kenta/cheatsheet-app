@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -57,6 +58,14 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.open_nav_drawer)
     public void openNavigationDrawer() {
         drawerLayout.openDrawer(Gravity.LEFT);
+    }
+
+    @OnClick(R.id.report)
+    public void reportButton() {
+        Intent i = new Intent(this, SentimentActivity.class);
+        startActivity(i);
+
+        drawerLayout.closeDrawer(GravityCompat.START);
     }
 
     @Subscribe

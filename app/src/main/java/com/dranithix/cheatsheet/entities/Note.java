@@ -9,6 +9,7 @@ import com.parse.ParseObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by user on 5/22/2016.
@@ -25,6 +26,7 @@ public class Note implements Parcelable {
     private ParseObject uploadedBy;
 
     public Note() {
+
     }
 
     public String getImagePath() {
@@ -36,6 +38,7 @@ public class Note implements Parcelable {
     }
 
     public Note(String title, String imagePath) {
+        super();
         this.title = title;
         this.imagePath = imagePath;
     }

@@ -142,7 +142,7 @@
                     android:paddingLeft="16dp"
                     android:paddingRight="16dp"
                     android:paddingTop="12dp"
-                    android:text="SEARCH"
+                    android:text="LEARN"
                     android:textColor="@color/colortext" />
 
             </LinearLayout>
