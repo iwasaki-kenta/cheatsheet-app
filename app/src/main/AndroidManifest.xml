@@ -36,7 +36,8 @@
         <activity
             android:name=".DrawActivity"
             android:configChanges="orientation|keyboardHidden"
-            android:screenOrientation="landscape"></activity>
+            android:screenOrientation="landscape" />
+        <activity android:name=".SentimentActivity"></activity>
     </application>
 
 </manifest>

@@ -83,7 +83,7 @@ public class SubcategoryFragment extends Fragment {
                     if (e == null) {
                         for (ParseObject obj : cat) {
                             Subcategory subcategory = new Subcategory();
-                            subcategory.setId(obj.getString("objectId"));
+                            subcategory.setId(obj.getObjectId());
                             subcategory.setName(obj.getString("name"));
                             subcategories.add(subcategory);
                         }

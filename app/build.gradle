@@ -33,6 +33,7 @@ repositories {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile project(':will-sdk-1.8.1')
     compile 'com.android.support:appcompat-v7:23.3.0'
     compile 'com.android.support:design:23.3.0'
     compile 'com.alexzh:circleimageview:1.1.2@aar'
@@ -52,8 +53,8 @@ dependencies {
     compile 'com.android.support:support-v4:23.3.0'
     compile 'com.parse.bolts:bolts-android:1.+'
     compile 'com.parse:parse-android:1.+'
+    compile 'com.thebluealliance:spectrum:0.4.2'
+    compile 'io.github.kexanie.library:MathView:0.0.6'
     testCompile 'junit:junit:4.12'
     provided 'frankiesardo:icepick-processor:3.2.0'
-    compile project(':will-sdk-1.8.1')
-    compile 'com.thebluealliance:spectrum:0.4.2'
 }

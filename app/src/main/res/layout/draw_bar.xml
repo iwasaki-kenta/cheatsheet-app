@@ -14,10 +14,10 @@
         android:background="#2E2F3A">
 
         <ImageView
-            android:id="@+id/open_nav_drawer"
+            android:id="@+id/back_button"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:background="@drawable/ic_three" />
+            android:background="@drawable/ic_arrows_2" />
 
         <customfonts.MyTextView
             android:id="@+id/toolbar_title"
@@ -28,14 +28,6 @@
             android:text="Draw"
             android:textColor="#fff"
             android:textSize="16dp" />
-
-
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_gravity="right"
-            android:layout_marginRight="20dp"
-            android:background="@drawable/ic_tool_2" />
 
     </android.support.v7.widget.Toolbar>
 

@@ -66,7 +66,13 @@ public class CategoryFragment extends Fragment {
             query.orderByAscending("name");
             query.whereEqualTo("parentId", "-1");
 
-            final String[] imageUrls = new String[]{"http://static1.squarespace.com/static/50c2031de4b02a7395e3e36f/t/542db21ee4b0d845f517528a/1412280869359/Biology+Header.jpg?format=1500w", "http://www2.hull.ac.uk/pgmi2/images/english.png", "http://www.ncl.ac.uk/media/wwwnclacuk/undergraduate/images/courseprofiles/English-Literature-with-Creative-Writing-BA-QW38-crop.jpg", "https://carleton.ca/geography/wp-content/uploads/Geography-Banner.jpg", "http://www.lawrence.edu/mfhe/styles/original/mfhe/www_core_communications/Everyone/mathematics.jpg", "http://sbasse.devlums.com/sites/default/files/programs/MS%20physics.jpg"};
+            final String[] imageUrls = new String[]{
+                    "http://www.nyas.org/image.axd?id=17556476-8691-4967-b6d6-bedfb8f9c5aa&t=634856441733570000",
+                    "http://www.filcatholic.org/wp-content/uploads/2015/09/international-mother-language-day_21213.jpg",
+                    "http://oolwebsites.s3.amazonaws.com/wp-content/uploads/books-english-literature-igcse.jpg",
+                    "http://www.thegreatcourses.com/media/catalog/product/cache/1/image/800x600/0f396e8a55728e79b48334e699243c07/1/7/1761---base_image.1424269355.jpg",
+                    "http://www.bu.edu/math/files/2010/06/golden-ratio.jpg",
+                    "http://www.cmu.edu/physics/news/2016/images/gravwaves_large.jpg"};
 
             query.findInBackground(new FindCallback<ParseObject>() {
                 public void done(List<ParseObject> cat, ParseException e) {

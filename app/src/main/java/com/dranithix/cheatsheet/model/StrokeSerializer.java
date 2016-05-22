@@ -1,16 +1,14 @@
 package com.dranithix.cheatsheet.model;
 
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.LinkedList;
-
 import android.net.Uri;
-import android.util.Base64;
 
 import com.wacom.ink.serialization.InkDecoder;
 import com.wacom.ink.serialization.InkEncoder;
 import com.wacom.ink.utils.Utils;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.LinkedList;
 
 public class StrokeSerializer {
     private final static int DEFAULT_DECIMAL_PRECISION = 2;
@@ -25,7 +23,7 @@ public class StrokeSerializer {
         this(DEFAULT_DECIMAL_PRECISION);
     }
 
-    public String serialize(LinkedList<Stroke> strokes) {
+    public boolean serialize(Uri uri, LinkedList<Stroke> strokes) {
         byte[] bytes = null;
         int encSize = 0;
 
@@ -46,11 +44,11 @@ public class StrokeSerializer {
         ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
         buffer.put(bytes);
 
-        return Base64.encodeToString(buffer.array(), Base64.DEFAULT);
+        return Utils.saveBinaryFile(uri, buffer, 0, encSize);
     }
 
-    public LinkedList<Stroke> deserialize(String stream) {
-        ByteBuffer buffer = ByteBuffer.wrap(stream.getBytes());
+    public LinkedList<Stroke> deserialize(Uri uri) {
+        ByteBuffer buffer = Utils.loadBinaryFile(uri);
         if (buffer == null) {
             return new LinkedList<Stroke>();
         }
@@ -69,9 +67,7 @@ public class StrokeSerializer {
             stroke.setWidth(decoder.getDecodedPathWidth());
             stroke.setBlendMode(decoder.getDecodedBlendMode());
             Utils.copyFloatBuffer(decoder.getDecodedPathData(), stroke.getPoints(), 0, 0, decoder.getDecodedPathSize());
-
             stroke.calculateBounds();
-
             result.add(stroke);
         }
         return result;

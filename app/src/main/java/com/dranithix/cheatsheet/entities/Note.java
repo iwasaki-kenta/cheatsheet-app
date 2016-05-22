@@ -3,6 +3,8 @@ package com.dranithix.cheatsheet.entities;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.parse.ParseException;
+import com.parse.ParseFile;
 import com.parse.ParseObject;
 
 import java.util.ArrayList;
@@ -16,12 +18,42 @@ public class Note implements Parcelable {
     private String id;
     private String title;
     private String categoryId;
+    private String imagePath;
     private List<String> tags = new ArrayList<String>();
-    private String data;
+    private byte[] data = new byte[0];
 
     private ParseObject uploadedBy;
 
-    public Note() {}
+    public Note() {
+    }
+
+    public String getImagePath() {
+        return imagePath;
+    }
+
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
+    }
+
+    public Note(String title, String imagePath) {
+        this.title = title;
+        this.imagePath = imagePath;
+    }
+
+    public Note(ParseObject obj) {
+        setId(obj.getObjectId());
+        setTitle(obj.getString("title"));
+        if (obj.has("data")) {
+            try {
+                setData(obj.getParseFile("data").getData());
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+        }
+        setTags(obj.<String>getList("tags"));
+        setUploadedBy(obj.getParseObject("uploadedBy"));
+        System.out.println(getTitle());
+    }
 
     public String getId() {
         return id;
@@ -39,11 +71,11 @@ public class Note implements Parcelable {
         this.categoryId = categoryId;
     }
 
-    public String getData() {
+    public byte[] getData() {
         return data;
     }
 
-    public void setData(String data) {
+    public void setData(byte[] data) {
         this.data = data;
     }
 
@@ -81,7 +113,8 @@ public class Note implements Parcelable {
         } else {
             tags = null;
         }
-        data = in.readString();
+        data = new byte[in.readInt()];
+        in.readByteArray(data);
         uploadedBy = (ParseObject) in.readValue(ParseObject.class.getClassLoader());
     }
 
@@ -101,7 +134,8 @@ public class Note implements Parcelable {
             dest.writeByte((byte) (0x01));
             dest.writeList(tags);
         }
-        dest.writeString(data);
+        dest.writeInt(data.length);
+        dest.writeByteArray(data);
         dest.writeValue(uploadedBy);
     }
 

@@ -3,18 +3,28 @@ package com.dranithix.cheatsheet;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.ColorInt;
 import android.support.v7.app.AppCompatActivity;
+import android.text.InputType;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.dranithix.cheatsheet.entities.Note;
 import com.dranithix.cheatsheet.model.Stroke;
 import com.dranithix.cheatsheet.model.StrokeSerializer;
+import com.parse.ParseException;
+import com.parse.ParseFile;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
+import com.parse.SaveCallback;
 import com.thebluealliance.spectrum.SpectrumDialog;
 import com.wacom.ink.manipulation.Intersector;
 import com.wacom.ink.path.PathBuilder;
@@ -29,6 +39,7 @@ import com.wacom.ink.rasterization.StrokeRenderer;
 import com.wacom.ink.rendering.EGLRenderingContext;
 import com.wacom.ink.smooth.MultiChannelSmoothener;
 
+import java.io.File;
 import java.nio.FloatBuffer;
 import java.util.LinkedList;
 
@@ -54,14 +65,11 @@ public class DrawActivity extends AppCompatActivity {
     private StrokeSerializer serializer;
     private Intersector<Stroke> intersector;
 
+    private Note note;
+
     private LinkedList<Stroke> strokesList = new LinkedList<>();
     private LinkedList<ClipboardEvent> undoStrokesList = new LinkedList<>();
     private boolean drawing = true;
-
-    @OnClick(R.id.back_button)
-    public void backButton() {
-        finish();
-    }
 
     @Bind(R.id.noteView)
     SurfaceView notesView;
@@ -105,9 +113,57 @@ public class DrawActivity extends AppCompatActivity {
         pathBuilder.setPropertyConfig(PathBuilder.PropertyName.Width, 5f, 10f, Float.NaN, Float.NaN, PathBuilder.PropertyFunction.Power, 1.0f, false);
         pathStride = pathBuilder.getStride();
 
-        Bundle b = getIntent().getExtras();
-        if (b != null) {
-            final Note note = (Note) b.getParcelable("note");
+        if (getIntent().hasExtra("note")) {
+            note = (Note) getIntent().getParcelableExtra("note");
+            ImageView backButton = (ImageView) findViewById(R.id.back_button);
+            backButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    finish();
+
+
+                }
+            });
+            final TextView toolbarTitle = (TextView) findViewById(R.id.toolbar_title);
+            toolbarTitle.setText(note.getTitle());
+            toolbarTitle.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(DrawActivity.this);
+                    builder.setTitle("Change title");
+
+                    final EditText input = new EditText(DrawActivity.this);
+                    input.setText(note.getTitle());
+                    input.setInputType(InputType.TYPE_CLASS_TEXT);
+                    builder.setView(input);
+
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            note.setTitle(input.getText().toString());
+                            toolbarTitle.setText(note.getTitle());
+                            ParseQuery<ParseObject> query = ParseQuery.getQuery("Notes");
+                            try {
+                                ParseObject obj = query.get(note.getId());
+                                obj.put("title", note.getTitle());
+                                obj.saveEventually();
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    });
+
+                    builder.show();
+                }
+            });
+
             notesView.getHolder().addCallback(new SurfaceHolder.Callback() {
 
                 @Override
@@ -139,7 +195,7 @@ public class DrawActivity extends AppCompatActivity {
                     serializer = new StrokeSerializer();
                     intersector = new Intersector<Stroke>();
 
-                    loadStrokes(note.getData());
+                    loadStrokes();
                     drawStrokes();
                     renderView();
                 }
@@ -192,7 +248,6 @@ public class DrawActivity extends AppCompatActivity {
                         }
                     }
                     saveStrokes();
-
 
                     return true;
                 }
@@ -263,12 +318,13 @@ public class DrawActivity extends AppCompatActivity {
     }
 
 
-    protected void loadStrokes(String details) {
-        strokesList = serializer.deserialize(details);
+    protected void loadStrokes() {
+        strokesList = serializer.deserialize(Uri.fromFile(new File(Environment.getExternalStorageDirectory() + "/will.bin")));
     }
 
     protected void saveStrokes() {
-        serializer.serialize(strokesList);
+        serializer.serialize(Uri.fromFile(new File(Environment.getExternalStorageDirectory() + "/will.bin")), strokesList);
+
     }
 
     private void drawStroke(MotionEvent event) {

@@ -33,8 +33,6 @@ public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.ViewHo
         TextView title;
         @Bind(R.id.image)
         ImageView coverArt;
-        @Bind(R.id.count)
-        TextView count;
 
         Note note;
 
@@ -62,7 +60,7 @@ public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.ViewHo
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater
                 .from(parent.getContext())
-                .inflate(R.layout.item_category, parent, false);
+                .inflate(R.layout.item_note, parent, false);
 
         return new ViewHolder(v);
     }
@@ -72,11 +70,11 @@ public class NoteListAdapter extends RecyclerView.Adapter<NoteListAdapter.ViewHo
         Note cat = notes.get(position);
         viewHolder.setNote(cat);
 
-//        Picasso.with(viewHolder.coverArt.getContext())
-//                .load(cat.getImagePath())
-//                .fit()
-//                .centerCrop()
-//                .into(viewHolder.coverArt);
+        Picasso.with(viewHolder.coverArt.getContext())
+                .load(cat.getImagePath())
+                .fit()
+                .centerCrop()
+                .into(viewHolder.coverArt);
 
         viewHolder.title.setText(cat.getTitle());
     }
